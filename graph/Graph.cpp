@@ -194,4 +194,48 @@ void Kruskal(MGraph mg, int&sum, Road road[])
 
 //最短路径
 //迪杰斯特拉算法
-void 
+void Dijkstra(MGraph mg, int v0, int dist[], int path[])
+{
+	int set[MAXSIZE];                                                          //记录结点是否纳入
+	int min,v;
+	for (int i = 0; i < mg.n; ++i)                                          //初始化dist，path数组（dist记录v0所连接的边的结点位置，path记录最短路径下的前一个结点的位置）
+	{
+		if (mg.edges[v0][i]==0)
+		{
+			mg.edges[v0][i] = INF;
+		}
+		dist[i] = mg.edges[v0][i];
+		set[i] = 0;
+		if (mg.edges[v0][i]<INF)
+		{
+			path[i] = mg.edges[v0][i];
+		}
+		else
+		{
+			path[i] = -1;                                                         //若不存在前一结点，则赋值为-1
+		}
+	}
+	set[v0] = 1;                                                                  //将v0纳入
+	path[v0] = -1;                                                              //v0的前一结点设为-1
+	for (int i = 0; i < mg.n-1; ++i)                                     //进行n-1次操作，将所有结点纳入
+	{
+		min = INF;                                                               //每次循环时初始化min
+		for (int j = 0; j < mg.n; ++j)                                    //找出剩余结点的最小路径
+		{
+			if (set[j]==0&&dist[j]<INF)
+			{
+				min = dist[j];
+				v = j;
+			}
+		}
+		set[v] = 1;
+		for (int k = 0; k < mg.n; ++k)                                 //将剩余结点中的最短路径更新
+		{
+			if (set[k]==0&&(dist[v]+mg.edges[v][k])<dist[k])
+			{
+				dist[k] = dist[v] + mg.edges[v][k];
+				path[k] = v;
+			}
+		}
+	}
+}
