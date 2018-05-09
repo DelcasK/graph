@@ -32,7 +32,8 @@ typedef struct ArcNode                          //边结点定义
 typedef struct                                         //头结点
 {
 	char data;                                           //结点信息
-	ArcNode*firstarc;                              //指向第一个边结点
+	ArcNode*firstarc;                               //指向第一个边结点
+	int count;                                           //此为新增的结构体变量，用于拓扑排序，表示入度
 }VNode;
  
 typedef struct                                         //邻接表定义
@@ -116,12 +117,18 @@ void Prim(MGraph mg,int v0,int&sum)
 {
 	int lowcost[MAXSIZE], vset[MAXSIZE];                           //lowcost存放结点的最短边，vset表示结点是否已被纳入
 	int sum,min,v;                                                                 //sum记录总权值，min记录每次循环下剩余节点中的最短边的值，v用于表示纳入的结点的位置
+	for (int i = 0; i < mg.n; ++i)
+	{
+		for (int j = 0; j < mg.n; ++j)
+		{
+			if (mg.edges[i][j] == 0)
+			{
+				mg.edges[i][j] = INF;
+			}
+		}
+	}
 	for (int i = 0; i < mg.n; ++i)                                            //初始化lowcost和vset，其中lowcost中原本为0的值应该为INF，否则0为最小值，影响接下来的循环
 	{
-		if (mg.edges[v0][i]==0)
-		{
-			mg.edges[v0][i] = INF;
-		}
 		lowcost[i] = mg.edges[v0][i];
 		vset[i] = 0;
 	}
@@ -193,17 +200,23 @@ void Kruskal(MGraph mg, int&sum, Road road[])
 
 
 //最短路径
-//迪杰斯特拉算法
+//1迪杰斯特拉算法
 void Dijkstra(MGraph mg, int v0, int dist[], int path[])
 {
 	int set[MAXSIZE];                                                          //记录结点是否纳入
 	int min,v;
+	for (int i = 0; i < mg.n; ++i)
+	{
+		for (int j = 0; j < mg.n; ++j)
+		{
+			if (mg.edges[i][j]==0)
+			{
+				mg.edges[i][j]=INF;
+			}
+		}
+	}
 	for (int i = 0; i < mg.n; ++i)                                          //初始化dist，path数组（dist记录v0所连接的边的结点位置，path记录最短路径下的前一个结点的位置）
 	{
-		if (mg.edges[v0][i]==0)
-		{
-			mg.edges[v0][i] = INF;
-		}
 		dist[i] = mg.edges[v0][i];
 		set[i] = 0;
 		if (mg.edges[v0][i]<INF)
@@ -237,5 +250,116 @@ void Dijkstra(MGraph mg, int v0, int dist[], int path[])
 				path[k] = v;
 			}
 		}
+	}
+}
+//由于path数组记录的是当前结点的前一结点的位置，若需要打印从源结点出发到当前结点的路径，需要逆输出（用栈实现）
+void printPath(int path[], int a)
+{
+	int stack[MAXSIZE];
+	int top = -1;
+	while (a!=-1)
+	{
+		stack[++top] = a;
+		a = path[a];
+	}
+	while (top!=-1)
+	{
+		std::cout << stack[top--] << "  ";
+	}
+}
+
+//2弗洛伊德算法
+void Floyd(MGraph mg, int path[][MAXSIZE])
+{
+	int A[MAXSIZE][MAXSIZE];
+	for (int i = 0; i < mg.n; ++i)
+	{
+		for (int j = 0; j < mg.n; ++j)                                         //对原数组进行处理，将非对角线上的0值改为INF
+		{
+			if (mg.edges[i][j] == 0&&i!=j)
+			{
+				mg.edges[i][j] = INF;
+			}
+		}
+	}
+	for (int i = 0; i < mg.n; ++i)                                             //初始化数组
+	{
+		for (int j = 0; j < mg.n; ++j)
+		{
+			A[i][j] = mg.edges[i][j];
+			path[i][j] = -1;
+		}
+	}
+	for (int i = 0; i < mg.n; i++)                                             //套三层循环，第一层用于遍历所有的结点，第二第三层用于遍历数组
+	{
+		for (int j = 0; j < mg.n; j++)
+		{
+			for (int k = 0; k < mg.n; k++)
+			{
+				if (A[j][k]>A[j][i]+A[i][k])
+				{
+					A[j][k]=A[j][i] + A[i][k];
+					path[j][k] = i;
+				}
+			}
+		}
+	}
+}
+//path数组打印成路径的实现
+void printPath(int u, int v, int path[][MAXSIZE])
+{
+	if (path[u][v]==-1)
+	{
+		std::cout << path[u][v] << " ";
+	}
+	else
+	{
+		printPath(u, path[u][v],path);
+		printPath( path[u][v],v,path);
+	}
+}
+
+
+//拓扑排序
+//AOV网（单向无环）
+//VNode结点中新增的count表示入度用于拓扑排序，拓扑排序是将count为0的结点先选出，再将
+//剩余结点的count-1，直至所有的结点均被选出为止
+//拓扑排序的特点：若存在u到v的路径，则在拓扑排序中，u必定在v之前
+//拓扑排序
+int topSort(AGraph*ag)
+{
+	int stack[MAXSIZE];                                                 //用栈记录，过程中只将入度为0的结点推入栈中
+	int top = -1;
+	int sum,a;                                                                
+	ArcNode*p;
+	for (int i = 0; i < ag->n; i++)                                  //进行第一次循环，将count为0的结点推入栈中
+	{
+		if (ag->adjlist[i].count==0)
+		{
+			stack[++top] = i;
+		}
+	}
+	while (top!=-1)
+	{
+		a = stack[top--];
+		std::cout << a << " ";
+		++sum;
+		p = ag->adjlist[a].firstarc;
+		while (p)                                                                                 //将出栈的结点所对应的边结点的count值均减1，
+		{                                                                                              //减一的过程中将count变为0的结点推入栈中
+			if (--ag->adjlist[p->adjvex].count==0)
+			{
+				stack[++top] = p->adjvex;
+			}
+			p = p->nextarc;
+		}
+	}
+	if (sum==ag->n)                                                                         //若循环结束后统计总数不为结点数，则报错
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
 	}
 }
