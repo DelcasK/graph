@@ -363,3 +363,63 @@ int topSort(AGraph*ag)
 		return 0;
 	}
 }
+
+
+//DFS非递归算法
+void DFS1(AGraph*ag, int v)                             //自制  
+{
+	int stack1[MAXSIZE],stack2[MAXSIZE];         //stack1用于代替系统栈，stack2用于将边结点入栈时恢复顺序
+	int visit[MAXSIZE] = {0};
+	int top1 = -1,top2=-1;
+	int a;
+	ArcNode*p = NULL;
+	VNode q;
+	stack1[++top1] = v;
+	visit[v] = 1;
+	while (top1!=-1)
+	{
+		a = stack1[top1--];
+		std::cout << a << " ";
+		q = ag->adjlist[a];
+		p = ag->adjlist[a].firstarc;
+		while (p)
+		{
+			if (visit[p->adjvex]==0)
+			{
+				stack2[++top2] = p->adjvex;
+			}
+		}
+		stack1[++top1] == stack2[top2--];
+	}
+}
+
+void DFS2(AGraph*ag, int v)
+{
+	int stack[MAXSIZE];
+	int top = -1;
+	int a;
+	ArcNode*p = NULL;
+	int visit[MAXSIZE] = { 0 };
+	Visit(v);
+	visit[v] = 1;
+	stack[top++] = v;
+	while (top!=-1)
+	{
+		a = stack[top];
+		p = ag->adjlist[a].firstarc;
+		while (p&&visit[p->adjvex]==1)                                      //找出第一个未被访问的结点
+		{
+			p->nextarc;
+		}
+		if (p==NULL)                                                                     //若是由于p为空而退出循环，则栈顶元素出栈
+		{
+			--top;
+		}
+		else                                                                                    //否则入栈p对应的元素并对其进行访问
+		{
+			Visit(p->adjvex);
+			visit[p->adjvex] = 1;
+			stack[++top] = p->adjvex;
+		}
+	}
+}
